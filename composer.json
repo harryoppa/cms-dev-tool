@@ -21,10 +21,10 @@
     },
     "autoload": {
         "psr-4": {
-            "TVHung\\DevTool\\": "src/dev-tool",
-            "TVHung\\PluginGenerator\\": "src/plugin-generator",
-            "TVHung\\ThemeGenerator\\": "src/theme-generator",
-            "TVHung\\WidgetGenerator\\": "src/widget-generator"
+            "TVHung\\DevTool\\": "src/dev-tool/src",
+            "TVHung\\PluginGenerator\\": "src/plugin-generator/src",
+            "TVHung\\ThemeGenerator\\": "src/theme-generator/src",
+            "TVHung\\WidgetGenerator\\": "src/widget-generator/src"
         }
     },
     "extra": {
