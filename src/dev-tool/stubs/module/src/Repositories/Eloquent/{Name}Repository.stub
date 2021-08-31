@@ -1,0 +1,10 @@
+<?php
+
+namespace TVHung\{Module}\Repositories\Eloquent;
+
+use TVHung\Support\Repositories\Eloquent\RepositoriesAbstract;
+use TVHung\{Module}\Repositories\Interfaces\{Name}Interface;
+
+class {Name}Repository extends RepositoriesAbstract implements {Name}Interface
+{
+}

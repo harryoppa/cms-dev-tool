@@ -1,0 +1,11 @@
+<?php
+
+namespace TVHung\{Module}\Repositories\Caches;
+
+use TVHung\Support\Repositories\Caches\CacheAbstractDecorator;
+use TVHung\{Module}\Repositories\Interfaces\{Name}Interface;
+
+class {Name}CacheDecorator extends CacheAbstractDecorator implements {Name}Interface
+{
+
+}

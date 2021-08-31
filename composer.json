@@ -1,0 +1,40 @@
+{
+    "name": "tvhung/cms-dev-tool",
+    "description": "CMS Devtool source",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Harry Tr",
+            "email": "hungtranqt93@gmail.com"
+        }
+    ],
+    "require": {
+        "php-parallel-lint/php-parallel-lint": "^1.0",
+        "squizlabs/php_codesniffer": "^3.3",
+        "barryvdh/laravel-debugbar": "^3.2",
+        "barryvdh/laravel-ide-helper": "^2.6",
+        "phpmd/phpmd": "^2.8",
+        "doctrine/dbal": "^3.0",
+        "botble/git-commit-checker": "^1.0",
+        "tvhung/cms": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "TVHung\\DevTool\\": "src/dev-tool",
+            "TVHung\\PluginGenerator\\": "src/plugin-generator",
+            "TVHung\\ThemeGenerator\\": "src/theme-generator",
+            "TVHung\\WidgetGenerator\\": "src/widget-generator"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TVHung\\DevTool\\Providers\\DevToolServiceProvider",
+                "TVHung\\PluginGenerator\\Providers\\PluginGeneratorServiceProvider",
+                "TVHung\\ThemeGenerator\\Providers\\ThemeGeneratorServiceProvider",
+                "TVHung\\WidgetGenerator\\Providers\\WidgetGeneratorServiceProvider"
+            ]
+        }
+    }
+}

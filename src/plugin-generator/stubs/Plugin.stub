@@ -1,0 +1,14 @@
+<?php
+
+namespace TVHung\{Module};
+
+use Illuminate\Support\Facades\Schema;
+use TVHung\PluginManagement\Abstracts\PluginOperationAbstract;
+
+class Plugin extends PluginOperationAbstract
+{
+    public static function remove()
+    {
+        Schema::dropIfExists('{names}');
+    }
+}
