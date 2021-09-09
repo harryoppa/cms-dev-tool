@@ -23,6 +23,8 @@ class PluginMakeCrudCommand extends BaseMakeCommand
      */
     protected $description = 'Create a CRUD inside a plugin';
 
+    const HOOK = '//--hook';
+
     /**
      * Execute the console command.
      *
@@ -56,19 +58,7 @@ class PluginMakeCrudCommand extends BaseMakeCommand
         $this->line('------------------');
         $this->call('cache:clear');
 
-        $replacements = [
-            'config/permissions.stub',
-            'helpers/constants.stub',
-            'routes/web.stub',
-            'src/Providers/{Module}ServiceProvider.stub',
-            'src/Plugin.stub',
-        ];
-
-        foreach ($replacements as $replacement) {
-            $this->line('Add below code into ' . $this->replacementSubModule(null,
-                    str_replace(base_path(), '', $location) . '/' . $replacement));
-            $this->info($this->replacementSubModule($replacement));
-        }
+        $this->replaceFilesWithSub($location);
 
         return 0;
     }
@@ -96,6 +86,36 @@ class PluginMakeCrudCommand extends BaseMakeCommand
         foreach ($files as $file) {
             File::delete($location . '/' . $file);
         }
+    }
+
+    protected function replaceFilesWithSub(string $location)
+    {
+        $replacements = [
+            'config/permissions.stub'                   => '    ',
+            'helpers/constants.stub'                    => '',
+            'routes/web.stub'                           => '        ',
+            'src/Providers/{Module}ServiceProvider.stub'=> '        ',
+            'src/Plugin.stub'                           => '        ',
+        ];
+
+        foreach ($replacements as $replacement => $spaces) {
+            $module = $this->replacementSubModule(null, $location . '/' . $replacement);
+            $content = $this->replacementSubModule($replacement);
+
+            $oldContent = File::get($module);
+
+            
+            File::put($module, $this->replaceContentWithHook($oldContent, $content, $spaces));
+
+            // $this->line('Add below code into ' . $module);
+            // $this->info($content);
+        }
+        
+    }
+
+    protected function replaceContentWithHook(string $oldContent, string $replace, string $spaces = '')
+    {
+        return str_replace(self::HOOK, $replace . PHP_EOL . $spaces . self::HOOK, $oldContent);
     }
 
     /**

@@ -22,6 +22,8 @@ class {Module}ServiceProvider extends ServiceProvider
             return new {Name}CacheDecorator(new {Name}Repository(new {Name}));
         });
 
+        //--hook
+
         Helper::autoload(__DIR__ . '/../../helpers');
     }
 

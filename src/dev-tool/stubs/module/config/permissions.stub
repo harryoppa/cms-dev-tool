@@ -20,4 +20,5 @@ return [
         'flag'        => '{-name}.destroy',
         'parent_flag' => '{-name}.index',
     ],
+    //--hook
 ];
