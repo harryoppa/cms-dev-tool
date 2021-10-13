@@ -7,7 +7,6 @@ use Illuminate\Support\ServiceProvider;
 use TVHung\{Module}\Repositories\Caches\{Name}CacheDecorator;
 use TVHung\{Module}\Repositories\Eloquent\{Name}Repository;
 use TVHung\{Module}\Repositories\Interfaces\{Name}Interface;
-use TVHung\Base\Supports\Helper;
 use Illuminate\Support\Facades\Event;
 use TVHung\Base\Traits\LoadAndPublishDataTrait;
 use Illuminate\Routing\Events\RouteMatched;
@@ -23,13 +22,12 @@ class {Module}ServiceProvider extends ServiceProvider
         });
 
         //--hook
-
-        Helper::autoload(__DIR__ . '/../../helpers');
     }
 
     public function boot()
     {
         $this->setNamespace('{types}/{-name}')
+            ->loadHelpers()
             ->loadAndPublishConfigurations(['permissions'])
             ->loadMigrations()
             ->loadAndPublishTranslations()
