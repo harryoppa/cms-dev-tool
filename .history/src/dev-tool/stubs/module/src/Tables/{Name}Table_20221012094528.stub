@@ -9,7 +9,6 @@ use TVHung\{Module}\Repositories\Interfaces\{Name}Interface;
 use TVHung\Table\Abstracts\TableAbstract;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Yajra\DataTables\DataTables;
-use Illuminate\Http\JsonResponse;
 use Html;
 
 class {Name}Table extends TableAbstract
@@ -46,7 +45,7 @@ class {Name}Table extends TableAbstract
     /**
      * {@inheritDoc}
      */
-    public function ajax(): JsonResponse
+    public function ajax()
     {
         $data = $this->table
             ->eloquent($this->query())
