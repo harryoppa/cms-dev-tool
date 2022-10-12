@@ -16,6 +16,7 @@
         "barryvdh/laravel-ide-helper": "^2.12",
         "phpmd/phpmd": "^2.13",
         "doctrine/dbal": "^3.0",
+        "botble/git-commit-checker": "^1.0",
         "tvhung/cms": "^6.0"
     },
     "autoload": {
