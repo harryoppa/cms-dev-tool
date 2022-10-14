@@ -2,12 +2,12 @@
 
 namespace TVHung\DevTool\Commands\Abstracts;
 
+use League\Flysystem\FilesystemException;
 use League\Flysystem\MountManager;
 use File;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use League\Flysystem\Local\LocalFilesystemAdapter as LocalAdapter;
-use League\Flysystem\FileNotFoundException;
 use League\Flysystem\Filesystem;
 
 abstract class BaseMakeCommand extends Command
@@ -19,8 +19,7 @@ abstract class BaseMakeCommand extends Command
      * @param string $location
      * @param null $stub
      * @return bool
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     * @throws FileNotFoundException
+     * @throws FilesystemException
      */
     public function searchAndReplaceInFiles(string $pattern, string $location, $stub = null): bool
     {
@@ -149,7 +148,6 @@ abstract class BaseMakeCommand extends Command
      * Generate the module in Modules directory.
      * @param string $from
      * @param string $to
-     * @throws FileNotFoundException
      */
     protected function publishStubs(string $from, string $to): void
     {
@@ -181,7 +179,6 @@ abstract class BaseMakeCommand extends Command
      * @param string $from
      * @param string $to
      * @return void
-     * @throws FileNotFoundException
      */
     protected function publishDirectory(string $from, string $to): void
     {
