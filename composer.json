@@ -16,7 +16,8 @@
         "barryvdh/laravel-ide-helper": "^2.12",
         "phpmd/phpmd": "^2.13",
         "doctrine/dbal": "^3.0",
-        "tvhung/cms": "^6.0"
+        "tvhung/cms": "^6.0",
+        "kris/laravel-form-builder": "dev-master"
     },
     "autoload": {
         "psr-4": {

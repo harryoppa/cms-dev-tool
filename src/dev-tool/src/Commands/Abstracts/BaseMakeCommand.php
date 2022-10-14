@@ -2,11 +2,11 @@
 
 namespace TVHung\DevTool\Commands\Abstracts;
 
-use TVHung\Base\Supports\MountManager;
+use League\Flysystem\MountManager;
 use File;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use League\Flysystem\Adapter\Local as LocalAdapter;
+use League\Flysystem\Local\LocalFilesystemAdapter as LocalAdapter;
 use League\Flysystem\FileNotFoundException;
 use League\Flysystem\Filesystem;
 
@@ -48,10 +48,10 @@ abstract class BaseMakeCommand extends Command
                 $content = str_replace(
                     array_keys($replacements),
                     array_values($replacements),
-                    $manager->read('directory://' . $file['path'])
+                    $manager->read($file['path'])
                 );
 
-                $manager->put('directory://' . $file['path'], $content);
+                $manager->write($file['path'], $content);
             }
         }
 
@@ -192,7 +192,7 @@ abstract class BaseMakeCommand extends Command
 
         foreach ($manager->listContents('from://', true) as $file) {
             if ($file['type'] === 'file' && (!$manager->has('to://' . $file['path']) || ($this->hasOption('force') && $this->option('force')))) {
-                $manager->put('to://' . $file['path'], $manager->read('from://' . $file['path']));
+                $manager->copy($file['path'], str_replace('from://', 'to://', $file['path']));
             }
         }
     }
