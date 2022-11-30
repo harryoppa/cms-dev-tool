@@ -65,6 +65,9 @@ class PluginMakeCrudCommand extends BaseMakeCommand
         return self::SUCCESS;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getStub(): string
     {
         return __DIR__ . '/../../../dev-tool/stubs/module';
