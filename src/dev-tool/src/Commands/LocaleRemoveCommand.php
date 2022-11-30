@@ -2,65 +2,49 @@
 
 namespace TVHung\DevTool\Commands;
 
-use File;
 use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
+#[AsCommand('cms:locale:remove', 'Remove a locale')]
 class LocaleRemoveCommand extends Command
 {
     use ConfirmableTrait;
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'cms:locale:remove {locale : The locale to remove}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Remove a locale';
-
-    /**
-     * @return int
-     */
-    public function handle()
+    public function handle(): int
     {
         if (!$this->confirmToProceed('Are you sure you want to permanently delete?', true)) {
-            return 1;
+            return self::FAILURE;
         }
 
         if (!preg_match('/^[a-z0-9\-]+$/i', $this->argument('locale'))) {
             $this->error('Only alphabetic characters are allowed.');
-            return 1;
+
+            return self::FAILURE;
         }
 
-        $defaultLocale = resource_path('lang/' . $this->argument('locale'));
+        $defaultLocale = lang_path($this->argument('locale'));
         if (File::exists($defaultLocale)) {
             File::deleteDirectory($defaultLocale);
             $this->info('Deleted: ' . $defaultLocale);
         }
 
-        $this->removeLocaleInPath(resource_path('lang/vendor/core'));
-        $this->removeLocaleInPath(resource_path('lang/vendor/packages'));
-        $this->removeLocaleInPath(resource_path('lang/vendor/plugins'));
+        File::delete(lang_path($this->argument('locale')) . '.json');
+        $this->removeLocaleInPath(lang_path('vendor/core'));
+        $this->removeLocaleInPath(lang_path('vendor/packages'));
+        $this->removeLocaleInPath(lang_path('vendor/plugins'));
 
         $this->info('Removed locale "' . $this->argument('locale') . '" successfully!');
 
-        return 0;
+        return self::SUCCESS;
     }
 
-    /**
-     * @param string $path
-     * @return int|void
-     */
-    protected function removeLocaleInPath(string $path)
+    protected function removeLocaleInPath(string $path): int
     {
         if (!File::isDirectory($path)) {
-            return 0;
+            return self::SUCCESS;
         }
 
         $folders = File::directories($path);
@@ -75,5 +59,10 @@ class LocaleRemoveCommand extends Command
         }
 
         return count($folders);
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument('locale', InputArgument::REQUIRED, 'The locale name that you want to remove');
     }
 }

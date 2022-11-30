@@ -3,43 +3,26 @@
 namespace TVHung\DevTool\Commands\Make;
 
 use TVHung\DevTool\Commands\Abstracts\BaseMakeCommand;
-use File;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use League\Flysystem\FileNotFoundException;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
+#[AsCommand('cms:make:repository', 'Make a repository')]
 class RepositoryMakeCommand extends BaseMakeCommand
 {
-    /**
-     * The console command signature.
-     *
-     * @var string
-     */
-    protected $signature = 'cms:make:repository {name : The table that you want to create} {module : module name}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Make a repository';
-
-    /**
-     * Execute the console command.
-     *
-     * @throws FileNotFoundException
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     */
-    public function handle()
+    public function handle(): int
     {
         if (!preg_match('/^[a-z0-9\-\_]+$/i', $this->argument('name'))) {
             $this->error('Only alphabetic characters are allowed.');
-            return 1;
+
+            return self::FAILURE;
         }
 
         $name = $this->argument('name');
 
         $stub = $this->getStub();
-        $path = $path = platform_path(strtolower($this->argument('module')) . '/src/Repositories');
+        $path = platform_path(strtolower($this->argument('module')) . '/src/Repositories');
 
         $this->publishFile($stub . '/Interfaces/{Name}Interface.stub', $path, $name, 'Interfaces', 'Interface.php');
         $this->publishFile($stub . '/Eloquent/{Name}Repository.stub', $path, $name, 'Eloquent', 'Repository.php');
@@ -49,18 +32,9 @@ class RepositoryMakeCommand extends BaseMakeCommand
 
         $this->info('Created successfully <comment>' . $path . '</comment>!');
 
-        return 0;
+        return self::SUCCESS;
     }
 
-    /**
-     * @param string $stub
-     * @param string $path
-     * @param string $name
-     * @param string $prefix
-     * @param string $extension
-     * @throws FileNotFoundException
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     */
     protected function publishFile(string $stub, string $path, string $name, string $prefix, string $extension)
     {
         $path = $path . '/' . $prefix . '/' . ucfirst(Str::studly($name)) . $extension;
@@ -70,17 +44,11 @@ class RepositoryMakeCommand extends BaseMakeCommand
         $this->searchAndReplaceInFiles($name, $path, File::get($stub));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getStub(): string
     {
         return __DIR__ . '/../../../stubs/module/src/Repositories';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getReplacements(string $replaceText): array
     {
         $module = explode('/', $this->argument('module'));
@@ -89,5 +57,11 @@ class RepositoryMakeCommand extends BaseMakeCommand
         return [
             '{Module}' => ucfirst(Str::camel($module)),
         ];
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument('name', InputArgument::REQUIRED, 'The repository name that you want to create');
+        $this->addArgument('module', InputArgument::REQUIRED, 'The module name');
     }
 }

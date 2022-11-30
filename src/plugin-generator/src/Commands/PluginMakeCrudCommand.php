@@ -3,40 +3,23 @@
 namespace TVHung\PluginGenerator\Commands;
 
 use TVHung\DevTool\Commands\Abstracts\BaseMakeCommand;
-use File;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use League\Flysystem\FileNotFoundException;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
+#[AsCommand('cms:plugin:make:crud', 'Create a CRUD inside a plugin')]
 class PluginMakeCrudCommand extends BaseMakeCommand
 {
-    /**
-     * The console command signature.
-     *
-     * @var string
-     */
-    protected $signature = 'cms:plugin:make:crud {plugin : The plugin name} {name : CRUD name}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Create a CRUD inside a plugin';
-
-    const HOOK = '//--hook';
-
-    /**
-     * Execute the console command.
-     *
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     * @throws FileNotFoundException
-     */
-    public function handle()
+    public function handle(): int
     {
-        if (!preg_match('/^[a-z0-9\-]+$/i', $this->argument('plugin')) || !preg_match('/^[a-z0-9\-]+$/i',
-                $this->argument('name'))) {
+        if (!preg_match('/^[a-z0-9\-]+$/i', $this->argument('plugin')) || !preg_match(
+                '/^[a-z0-9\-]+$/i',
+                $this->argument('name')
+            )) {
             $this->error('Only alphabetic characters are allowed.');
-            return 1;
+
+            return self::FAILURE;
         }
 
         $plugin = strtolower($this->argument('plugin'));
@@ -44,7 +27,8 @@ class PluginMakeCrudCommand extends BaseMakeCommand
 
         if (!File::isDirectory($location)) {
             $this->error('Plugin named [' . $plugin . '] does not exists.');
-            return 1;
+
+            return self::FAILURE;
         }
 
         $name = strtolower($this->argument('name'));
@@ -54,26 +38,38 @@ class PluginMakeCrudCommand extends BaseMakeCommand
         $this->renameFiles($name, $location);
         $this->searchAndReplaceInFiles($name, $location);
         $this->line('------------------');
-        $this->line('<info>The CRUD for plugin </info> <comment>' . $plugin . '</comment> <info>was created in</info> <comment>' . $location . '</comment><info>, customize it!</info>');
+        $this->line(
+            '<info>The CRUD for plugin </info> <comment>' . $plugin . '</comment> <info>was created in</info> <comment>' . $location . '</comment><info>, customize it!</info>'
+        );
         $this->line('------------------');
         $this->call('cache:clear');
 
-        $this->replaceFilesWithSub($location);
+        $replacements = [
+            'config/permissions.stub',
+            'helpers/constants.stub',
+            'routes/web.stub',
+            'src/Providers/{Module}ServiceProvider.stub',
+            'src/Plugin.stub',
+        ];
 
-        return 0;
+        foreach ($replacements as $replacement) {
+            $this->line(
+                'Add below code into ' . $this->replacementSubModule(
+                    null,
+                    str_replace(base_path(), '', $location) . '/' . $replacement
+                )
+            );
+            $this->info($this->replacementSubModule($replacement));
+        }
+
+        return self::SUCCESS;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getStub(): string
     {
         return __DIR__ . '/../../../dev-tool/stubs/module';
     }
 
-    /**
-     * @param string $location
-     */
     protected function removeUnusedFiles(string $location)
     {
         $files = [
@@ -88,41 +84,6 @@ class PluginMakeCrudCommand extends BaseMakeCommand
         }
     }
 
-    protected function replaceFilesWithSub(string $location)
-    {
-        $replacements = [
-            'config/permissions.stub'                   => '    ',
-            'helpers/constants.stub'                    => '',
-            'routes/web.stub'                           => '        ',
-            'src/Providers/{Module}ServiceProvider.stub'=> '        ',
-            'src/Plugin.stub'                           => '        ',
-        ];
-
-        foreach ($replacements as $replacement => $spaces) {
-            $module = $this->replacementSubModule(null, $location . '/' . $replacement);
-            $content = $this->replacementSubModule($replacement);
-
-            $oldContent = File::get($module);
-
-            
-            File::put($module, $this->replaceContentWithHook($oldContent, $content, $spaces));
-
-            // $this->line('Add below code into ' . $module);
-            // $this->info($content);
-        }
-        
-    }
-
-    protected function replaceContentWithHook(string $oldContent, string $replace, string $spaces = '')
-    {
-        return str_replace(self::HOOK, $replace . PHP_EOL . $spaces . self::HOOK, $oldContent);
-    }
-
-    /**
-     * @param string $file
-     * @param null $content
-     * @return string
-     */
     protected function replacementSubModule(string $file = null, $content = null): string
     {
         $name = strtolower($this->argument('name'));
@@ -136,24 +97,27 @@ class PluginMakeCrudCommand extends BaseMakeCommand
         return str_replace(array_keys($replace), $replace, $content);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getReplacements(string $replaceText): array
     {
         $module = strtolower($this->argument('plugin'));
 
         return [
-            '{type}'     => 'plugin',
-            '{types}'    => 'plugins',
-            '{-module}'  => strtolower($module),
-            '{module}'   => Str::snake(str_replace('-', '_', $module)),
-            '{+module}'  => Str::camel($module),
-            '{modules}'  => Str::plural(Str::snake(str_replace('-', '_', $module))),
-            '{Modules}'  => ucfirst(Str::plural(Str::snake(str_replace('-', '_', $module)))),
+            '{type}' => 'plugin',
+            '{types}' => 'plugins',
+            '{-module}' => strtolower($module),
+            '{module}' => Str::snake(str_replace('-', '_', $module)),
+            '{+module}' => Str::camel($module),
+            '{modules}' => Str::plural(Str::snake(str_replace('-', '_', $module))),
+            '{Modules}' => ucfirst(Str::plural(Str::snake(str_replace('-', '_', $module)))),
             '{-modules}' => Str::plural($module),
-            '{MODULE}'   => strtoupper(Str::snake(str_replace('-', '_', $module))),
-            '{Module}'   => ucfirst(Str::camel($module)),
+            '{MODULE}' => strtoupper(Str::snake(str_replace('-', '_', $module))),
+            '{Module}' => ucfirst(Str::camel($module)),
         ];
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument('plugin', InputArgument::REQUIRED, 'The plugin name');
+        $this->addArgument('name', InputArgument::REQUIRED, 'The CRUD name');
     }
 }

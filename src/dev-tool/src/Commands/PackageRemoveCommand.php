@@ -2,33 +2,23 @@
 
 namespace TVHung\DevTool\Commands;
 
+use BaseHelper;
 use TVHung\Base\Supports\Helper;
-use Illuminate\Support\Facades\DB;
-use Exception;
-use File;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
+#[AsCommand('cms:package:remove', 'Remove a package in the /platform/packages directory.')]
 class PackageRemoveCommand extends Command
 {
-    /**
-     * The console command signature.
-     *
-     * @var string
-     */
-    protected $signature = 'cms:package:remove {name : The package name}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Remove a package in the /platform/packages directory.';
-
-    public function handle()
+    public function handle(): int
     {
         if (!preg_match('/^[a-z0-9\-]+$/i', $this->argument('name'))) {
             $this->error('Only alphabetic characters are allowed.');
-            return 1;
+
+            return self::FAILURE;
         }
 
         $package = strtolower($this->argument('name'));
@@ -36,22 +26,19 @@ class PackageRemoveCommand extends Command
 
         if (!File::isDirectory($location)) {
             $this->error('This package is not existed!');
-            return 1;
+
+            return self::FAILURE;
         }
 
-        return $this->processRemove($package, $location);
+        $this->processRemove($package, $location);
+
+        return self::SUCCESS;
     }
 
-    /**
-     * @param string $package
-     * @param string $location
-     * @return boolean
-     * @throws Exception
-     */
     protected function processRemove(string $package, string $location): bool
     {
         $migrations = [];
-        foreach (scan_folder($location . '/database/migrations') as $file) {
+        foreach (BaseHelper::scanFolder($location . '/database/migrations') as $file) {
             $migrations[] = pathinfo($file, PATHINFO_FILENAME);
         }
 
@@ -65,8 +52,15 @@ class PackageRemoveCommand extends Command
 
         $this->line('<info>Removed package files successfully!</info>');
 
-        $this->line('<info>Remove</info> <comment>"tvhung/' . $package . '": "*@dev"</comment> to composer.json then run <comment>composer update</comment> to remove this package!');
+        $this->line(
+            '<info>Remove</info> <comment>"tvhung/' . $package . '": "*@dev"</comment> to composer.json then run <comment>composer update</comment> to remove this package!'
+        );
 
-        return 0;
+        return true;
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument('name', InputArgument::REQUIRED, 'The package name');
     }
 }

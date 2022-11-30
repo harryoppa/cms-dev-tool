@@ -2,56 +2,39 @@
 
 namespace TVHung\DevTool\Commands;
 
-use File;
+use Illuminate\Support\Facades\File;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
+#[AsCommand('cms:locale:create', 'Create a new locale')]
 class LocaleCreateCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'cms:locale:create {locale : The locale to create}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Create a new locale';
-
-    /**
-     * @return int
-     */
-    public function handle()
+    public function handle(): int
     {
         if (!preg_match('/^[a-z0-9\-]+$/i', $this->argument('locale'))) {
             $this->error('Only alphabetic characters are allowed.');
-            return 1;
+
+            return self::FAILURE;
         }
 
-        $defaultLocale = resource_path('lang/en');
+        $defaultLocale = lang_path('en');
         if (File::exists($defaultLocale)) {
-            File::copyDirectory($defaultLocale, resource_path('lang/' . $this->argument('locale')));
-            $this->info('Created: ' . resource_path('lang/' . $this->argument('locale')));
+            File::copyDirectory($defaultLocale, lang_path($this->argument('locale')));
+            $this->info('Created: ' . lang_path($this->argument('locale')));
         }
 
-        $this->createLocaleInPath(resource_path('lang/vendor/core'));
-        $this->createLocaleInPath(resource_path('lang/vendor/packages'));
-        $this->createLocaleInPath(resource_path('lang/vendor/plugins'));
+        $this->createLocaleInPath(lang_path('vendor/core'));
+        $this->createLocaleInPath(lang_path('vendor/packages'));
+        $this->createLocaleInPath(lang_path('vendor/plugins'));
 
-        return 0;
+        return self::SUCCESS;
     }
 
-    /**
-     * @param string $path
-     * @return int|void
-     */
-    protected function createLocaleInPath(string $path)
+    protected function createLocaleInPath(string $path): int
     {
         if (!File::isDirectory($path)) {
-            return 0;
+            return self::SUCCESS;
         }
 
         $folders = File::directories($path);
@@ -66,5 +49,10 @@ class LocaleCreateCommand extends Command
         }
 
         return count($folders);
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument('locale', InputArgument::REQUIRED, 'The locale name that you want to create');
     }
 }

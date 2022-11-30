@@ -3,88 +3,67 @@
 namespace TVHung\DevTool\Commands;
 
 use TVHung\ACL\Repositories\Interfaces\UserInterface;
-use Illuminate\Support\Facades\DB;
-use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Throwable;
 
+#[AsCommand('cms:user:rebuild-permissions', 'Rebuild all the user permissions from the users defined roles and the roles defined flags')]
 class RebuildPermissionsCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'cms:user:rebuild-permissions';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Rebuild all the user permissions from the users defined roles and the roles defined flags';
-
-    /**
-     * @var UserInterface
-     */
-    protected $userRepository;
-
-    /**
-     * RebuildPermissionsCommand constructor.
-     * @param UserInterface $userRepository
-     */
-    public function __construct(UserInterface $userRepository)
+    public function handle(UserInterface $userRepository): int
     {
-        parent::__construct();
+        try {
+            // Safety first!
+            DB::beginTransaction();
 
-        $this->userRepository = $userRepository;
-    }
+            // Firstly, lets grab out the global roles
+            $allRoles = DB::select('SELECT id, name, permissions FROM roles');
 
-    /**
-     * Execute the console command.
-     *
-     * @throws Exception
-     * @return int
-     */
-    public function handle()
-    {
-        // Safety first!
-        DB::beginTransaction();
+            if (empty($allRoles)) {
+                $users = $userRepository->all();
+                foreach ($users as $user) {
+                    $user->permissions = [
+                        ACL_ROLE_SUPER_USER => (bool)$user->super_user,
+                        ACL_ROLE_MANAGE_SUPERS => (bool)$user->manage_supers,
+                    ];
+                    $userRepository->createOrUpdate($user);
+                }
+            } else {
+                // Go and grab all of the permission flags defined on these global roles
+                foreach ($allRoles as $role) {
+                    $permissions = json_decode($role->permissions, '[]');
 
-        // Firstly, lets grab out the global roles
-        $allRoles = DB::select('SELECT id, name, permissions FROM roles');
-
-        if (empty($allRoles)) {
-            $users = $this->userRepository->all();
-            foreach ($users as $user) {
-                $user->permissions = [
-                    ACL_ROLE_SUPER_USER    => (boolean)$user->super_user,
-                    ACL_ROLE_MANAGE_SUPERS => (boolean)$user->manage_supers,
-                ];
-                $this->userRepository->createOrUpdate($user);
-            }
-        } else {
-            // Go and grab all of the permission flags defined on these global roles
-            foreach ($allRoles as $role) {
-
-                $permissions = json_decode($role->permissions, '[]');
-
-                $userRoles = DB::select('SELECT user_id, role_id FROM role_users WHERE role_id=' . $role->id);
-                foreach ($userRoles as $userRole) {
-                    $user = DB::select('SELECT super_user, manage_supers FROM users WHERE id=' . $userRole->user_id);
-                    if (!empty($user)) {
-                        $user = $user[0];
-                        $permissions[ACL_ROLE_SUPER_USER] = (boolean)$user->super_user;
-                        $permissions[ACL_ROLE_MANAGE_SUPERS] = (boolean)$user->manage_supers;
-                        DB::statement("UPDATE users SET permissions = '" . json_encode($permissions) . "' where id=" . $userRole->user_id);
+                    $userRoles = DB::select('SELECT user_id, role_id FROM role_users WHERE role_id=' . $role->id);
+                    foreach ($userRoles as $userRole) {
+                        $user = DB::select(
+                            'SELECT super_user, manage_supers FROM users WHERE id=' . $userRole->user_id
+                        );
+                        if (!empty($user)) {
+                            $user = $user[0];
+                            $permissions[ACL_ROLE_SUPER_USER] = (bool)$user->super_user;
+                            $permissions[ACL_ROLE_MANAGE_SUPERS] = (bool)$user->manage_supers;
+                            DB::statement(
+                                "UPDATE users SET permissions = '" . json_encode(
+                                    $permissions
+                                ) . "' where id=" . $userRole->user_id
+                            );
+                        }
                     }
                 }
             }
+
+            $this->info('Rebuild user permissions successfully!');
+
+            DB::commit();
+
+            return self::SUCCESS;
+        } catch (Throwable $exception) {
+            DB::rollBack();
+
+            $this->error($exception->getMessage());
+
+            return self::FAILURE;
         }
-
-        $this->info('Rebuild user permissions successfully!');
-
-        DB::commit();
-
-        return 0;
     }
 }
