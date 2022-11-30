@@ -46,7 +46,7 @@ class PluginCreateCommand extends BaseMakeCommand
 
     public function getStub(): string
     {
-        return package_path('dev-tool/stubs/module');
+        return __DIR__ . '/../../../dev-tool/stubs/module';
     }
 
     protected function removeUnusedFiles(string $location)
